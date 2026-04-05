@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cortex Web Clipper</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <!-- ── Header ─────────────────────────────────────────────── -->
+  <header>
+    <div class="logo">
+      <span class="logo-icon">◈</span>
+      <span class="logo-text">Cortex</span>
+    </div>
+    <div class="conn-row">
+      <span class="conn-dot" id="conn-dot"></span>
+      <span class="conn-label" id="conn-label">Checking…</span>
+    </div>
+  </header>
+
+  <!-- ── Clip View (shown when text is selected) ───────────── -->
+  <section id="view-clip" class="view hidden">
+    <div class="preview-box" id="preview-text"></div>
+    <input id="clip-title" class="field" type="text" placeholder="Title" />
+    <input id="clip-tags"  class="field" type="text" placeholder="Tags (comma-separated)" />
+    <div class="btn-row">
+      <button class="btn btn-amber" id="btn-save">Save Clip</button>
+      <button class="btn btn-purple" id="btn-save-ai">Save &amp; Summarize</button>
+    </div>
+    <div class="status-line" id="clip-status"></div>
+  </section>
+
+  <!-- ── Dashboard View (shown when no text selected) ─────── -->
+  <section id="view-dash" class="view hidden">
+    <!-- Search -->
+    <div class="search-wrap">
+      <input id="search-input" class="field" type="text" placeholder="Search your Cortex…" />
+    </div>
+
+    <!-- Recent clips list -->
+    <div class="section-label">Recent clips</div>
+    <div id="clips-list" class="clips-list">
+      <div class="empty-hint">No clips yet — select text on any page and press <kbd>Alt+Shift+C</kbd></div>
+    </div>
+
+    <!-- Footer actions -->
+    <div class="footer-actions">
+      <button class="btn btn-ghost" id="btn-open-app">Open Cortex ↗</button>
+    </div>
+  </section>
+
+  <!-- ── No-text nudge (inside dash when offline + empty) ─── -->
+
+  <script src="popup.js"></script>
+</body>
+</html>

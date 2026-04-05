@@ -1,6 +1,10 @@
 const { app, BrowserWindow, ipcMain, shell, nativeTheme, dialog } = require('electron')
 const path = require('path')
 const fs = require('fs')
+const http = require('http')
+
+// ─── UID ──────────────────────────────────────────────────────────────────────
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
 
 // ─── ENV LOADER ───────────────────────────────────────────────────────────────
 const envPath = path.join(__dirname, '..', '.env')
@@ -351,6 +355,138 @@ function setupIPC() {
   })
 }
 
+// ─── LOCAL HTTP API (port 7777, for browser extension) ───────────────────────
+let apiServer
+
+function startAPIServer() {
+  apiServer = http.createServer((req, res) => {
+    // CORS — allow extension and localhost origins
+    res.setHeader('Access-Control-Allow-Origin', '*')
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+
+    if (req.method === 'OPTIONS') {
+      res.writeHead(204)
+      res.end()
+      return
+    }
+
+    const url = new URL(req.url, 'http://localhost:7777')
+
+    // ── GET /api/health ──────────────────────────────────────────────────────
+    if (req.method === 'GET' && url.pathname === '/api/health') {
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ ok: true, version: '1.0.0' }))
+      return
+    }
+
+    // ── GET /api/clips?limit=&search= ────────────────────────────────────────
+    if (req.method === 'GET' && url.pathname === '/api/clips') {
+      try {
+        const limit  = Math.min(parseInt(url.searchParams.get('limit')  || '20', 10), 100)
+        const search = url.searchParams.get('search') || ''
+        let rows
+        if (search.trim()) {
+          const q = `%${search}%`
+          rows = queryAll(
+            `SELECT * FROM items WHERE (title LIKE ? OR content LIKE ?) ORDER BY created_at DESC LIMIT ?`,
+            [q, q, limit]
+          )
+        } else {
+          rows = queryAll(`SELECT * FROM items ORDER BY created_at DESC LIMIT ?`, [limit])
+        }
+        const items = withTags(rows)
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify(items))
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: e.message }))
+      }
+      return
+    }
+
+    // ── POST /api/clips ──────────────────────────────────────────────────────
+    if (req.method === 'POST' && url.pathname === '/api/clips') {
+      let body = ''
+      req.on('data', chunk => { body += chunk })
+      req.on('end', () => {
+        try {
+          const { title, content, url: itemUrl, tags = [], summary = null } = JSON.parse(body || '{}')
+          const now = Date.now()
+          const id  = uid()
+          run(
+            `INSERT INTO items (id, type, title, content, url, summary, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [id, 'clip', title || itemUrl || 'Web Clip', content || '',
+             itemUrl || null, summary || null, now, now]
+          )
+          // Tags
+          for (const tagName of tags) {
+            const name = String(tagName).trim()
+            if (!name) continue
+            const tagId = name.toLowerCase().replace(/\s+/g, '-')
+            run(`INSERT OR IGNORE INTO tags (id, name) VALUES (?, ?)`, [tagId, name])
+            run(`INSERT OR IGNORE INTO item_tags (item_id, tag_id) VALUES (?, ?)`, [id, tagId])
+          }
+          saveDB()
+          res.writeHead(201, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ ok: true, id }))
+        } catch (e) {
+          res.writeHead(400, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error: e.message }))
+        }
+      })
+      return
+    }
+
+    // ── POST /api/summarize ──────────────────────────────────────────────────
+    if (req.method === 'POST' && url.pathname === '/api/summarize') {
+      let body = ''
+      req.on('data', chunk => { body += chunk })
+      req.on('end', async () => {
+        try {
+          const { text } = JSON.parse(body || '{}')
+          const apiKey = getApiKey()
+          if (!apiKey) {
+            res.writeHead(503, { 'Content-Type': 'application/json' })
+            res.end(JSON.stringify({ error: 'No API key configured' }))
+            return
+          }
+          const OpenAI = require('openai')
+          const client = new OpenAI({ apiKey })
+          const completion = await client.chat.completions.create({
+            model: 'gpt-4o-mini',
+            max_tokens: 300,
+            messages: [{
+              role: 'user',
+              content: `Summarize the following content in 2-3 concise sentences. Focus on the key ideas:\n\n${String(text || '').substring(0, 4000)}`,
+            }],
+          })
+          const summary = completion.choices[0].message.content
+          res.writeHead(200, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ summary }))
+        } catch (e) {
+          res.writeHead(500, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error: e.message }))
+        }
+      })
+      return
+    }
+
+    // 404
+    res.writeHead(404, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ error: 'Not found' }))
+  })
+
+  apiServer.listen(7777, '127.0.0.1', () => {
+    console.log('[api] Listening on http://127.0.0.1:7777')
+  })
+
+  apiServer.on('error', (e) => {
+    console.error('[api] Server error:', e.message)
+  })
+}
+
 // ─── WINDOW ───────────────────────────────────────────────────────────────────
 let mainWindow
 
@@ -405,6 +541,7 @@ app.whenReady().then(async () => {
   if (!db) return
   console.log('[main] DB ready, setting up IPC...')
   setupIPC()
+  startAPIServer()
   console.log('[main] IPC ready, creating window...')
   createWindow()
 
@@ -418,6 +555,7 @@ app.on('window-all-closed', () => {
 })
 
 app.on('quit', () => {
+  if (apiServer) try { apiServer.close() } catch {}
   if (db) {
     try { saveDB() } catch {}
     db.close()

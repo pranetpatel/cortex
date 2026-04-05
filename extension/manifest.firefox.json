@@ -1,0 +1,52 @@
+{
+  "manifest_version": 3,
+  "name": "Cortex Web Clipper",
+  "version": "1.0.0",
+  "description": "Clip text from any webpage into your Cortex knowledge base",
+  "permissions": [
+    "activeTab",
+    "contextMenus",
+    "scripting",
+    "storage",
+    "commands"
+  ],
+  "host_permissions": [
+    "http://localhost:7777/*"
+  ],
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "commands": {
+    "quick-clip": {
+      "suggested_key": {
+        "default": "Alt+Shift+C"
+      },
+      "description": "Quick clip selected text to Cortex"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "cortex-clipper@pranetpatel",
+      "strict_min_version": "109.0"
+    }
+  }
+}
