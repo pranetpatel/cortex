@@ -1,70 +1,125 @@
-# Getting Started with Create React App
+# ◈ Cortex
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+> Your personal second brain — clip, note, connect, write.
 
-## Available Scripts
+Cortex is a local-first desktop app for personal knowledge management. Clip content from the web, take linked notes, visualize how ideas connect, and write essays with an AI assistant that has full access to your research.
 
-In the project directory, you can run:
+All data lives in a local SQLite database. Nothing leaves your machine except API calls to Anthropic for AI features.
 
-### `npm start`
+---
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## Features
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+- **Web Clipping** — Paste URLs and highlighted text; Claude auto-summarizes each clip
+- **Linked Notes** — Markdown-style notes with `[[Wiki Link]]` bidirectional linking
+- **Knowledge Graph** — Force-directed graph showing clips, notes, and essays connected by links and shared tags
+- **Essay Workspace** — Distraction-free editor with an AI writing assistant that has access to all your research
+- **AI Chat** — Ask questions across your entire knowledge base
+- **Full-text Search** — SQLite FTS5-powered search across all content
 
-### `npm test`
+---
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Tech Stack
 
-### `npm run build`
+| Layer | Technology |
+|---|---|
+| Desktop shell | Electron 33 |
+| UI | React 18 + Vite |
+| Database | SQLite via better-sqlite3 |
+| AI | Anthropic Claude (claude-sonnet-4-6) |
+| Packaging | electron-builder |
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+---
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## Prerequisites
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+**Windows:** Python 3.x and Visual Studio Build Tools with "Desktop development with C++"
+(needed to compile `better-sqlite3` native module)
 
-### `npm run eject`
+**macOS:** Xcode Command Line Tools (`xcode-select --install`)
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+---
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## Installation
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+```bash
+# 1. Clone the repo
+git clone https://github.com/pranetayvid/cortex.git
+cd cortex
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+# 2. Install dependencies
+npm install
 
-## Learn More
+# 3. Recompile native modules for Electron
+npm run rebuild
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+# 4. Add your Anthropic API key
+cp .env.example .env
+# Edit .env and add: ANTHROPIC_API_KEY=sk-ant-...
+# (You can also set it in the app via Settings)
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+# 5. Start the app
+npm run dev
+```
 
-### Code Splitting
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## Scripts
 
-### Analyzing the Bundle Size
+| Command | Description |
+|---|---|
+| `npm run dev` | Start Vite + Electron in development mode |
+| `npm run build` | Build the renderer (Vite) |
+| `npm run package` | Build + package the app with electron-builder |
+| `npm run rebuild` | Recompile native modules for Electron |
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+---
 
-### Making a Progressive Web App
+## Keyboard Shortcuts
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+| Shortcut | Action |
+|---|---|
+| `Ctrl/Cmd + N` | New note |
+| `Ctrl/Cmd + K` | Focus search |
+| `Ctrl/Cmd + G` | Toggle graph view |
+| `Ctrl/Cmd + S` | Save current item |
 
-### Advanced Configuration
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+## Project Structure
 
-### Deployment
+```
+cortex/
+├── electron/
+│   ├── main.js        # Main process: SQLite, IPC, Anthropic API
+│   └── preload.js     # contextBridge API exposure
+├── src/
+│   ├── App.jsx        # Main app component
+│   ├── main.jsx       # React entry point
+│   ├── components/
+│   │   ├── GraphView.jsx
+│   │   ├── Icons.jsx
+│   │   └── Sidebar.jsx
+│   ├── services/
+│   │   ├── db.js      # IPC wrapper for database
+│   │   └── ai.js      # IPC wrapper for AI calls
+│   └── styles/
+│       └── global.css
+└── vite.config.js
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+---
 
-### `npm run build` fails to minify
+## Roadmap
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- [ ] Chrome / Firefox browser extension for one-click clipping
+- [ ] Mobile companion app (React Native)
+- [ ] Telegram bot to clip and query from anywhere
+- [ ] PDF import and annotation
+- [ ] Export to Markdown / Obsidian vault
+
+---
+
+## License
+
+MIT

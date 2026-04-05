@@ -1,0 +1,71 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background: #0e0e11;
+  color: #e8e4df;
+  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Wiki links ── */
+.wiki-link {
+  color: #6ec6f7;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  transition: color 0.12s;
+}
+.wiki-link:hover { color: #9dd8ff; }
+
+/* ── Scrollbars ── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.08) transparent;
+}
+*::-webkit-scrollbar { width: 6px; height: 6px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.08);
+  border-radius: 3px;
+}
+*::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.14); }
+
+/* ── Card hover effect ── */
+.card:hover {
+  border-color: rgba(255,255,255,0.12) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+/* ── Nav item hover ── */
+.nav-item:hover:not(.nav-active) {
+  background: rgba(255,255,255,0.04) !important;
+  color: rgba(255,255,255,0.75) !important;
+}
+
+/* ── Textarea focus ── */
+textarea:focus, input:focus {
+  outline: none;
+}
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .mobile-header { display: flex !important; }
+  .sidebar {
+    position: fixed !important;
+    height: 100% !important;
+    z-index: 99;
+  }
+}
