@@ -15,7 +15,7 @@ All data lives in a local SQLite database. Nothing leaves your machine except AP
 - **Knowledge Graph** — Force-directed graph showing clips, notes, and essays connected by links and shared tags
 - **Essay Workspace** — Distraction-free editor with an AI writing assistant that has access to all your research
 - **AI Chat** — Ask questions across your entire knowledge base
-- **Full-text Search** — SQLite FTS5-powered search across all content
+- **Full-text Search** — Search across titles, content, and tags
 
 ---
 
@@ -25,18 +25,15 @@ All data lives in a local SQLite database. Nothing leaves your machine except AP
 |---|---|
 | Desktop shell | Electron 33 |
 | UI | React 18 + Vite |
-| Database | SQLite via better-sqlite3 |
-| AI | OpenAI (gpt-4o / gpt-4o-mini) |
+| Database | SQLite via sql.js (WebAssembly) |
+| AI | Anthropic Claude (claude-sonnet-4-20250514) |
 | Packaging | electron-builder |
 
 ---
 
 ## Prerequisites
 
-**Windows:** Python 3.x and Visual Studio Build Tools with "Desktop development with C++"
-(needed to compile `better-sqlite3` native module)
-
-**macOS:** Xcode Command Line Tools (`xcode-select --install`)
+Node.js 18+ and npm. No native compilation required — the database layer uses sql.js (pure WebAssembly SQLite).
 
 ---
 
@@ -44,21 +41,18 @@ All data lives in a local SQLite database. Nothing leaves your machine except AP
 
 ```bash
 # 1. Clone the repo
-git clone https://github.com/pranetayvid/cortex.git
+git clone https://github.com/pranetpatel/cortex.git
 cd cortex
 
 # 2. Install dependencies
 npm install
 
-# 3. Recompile native modules for Electron
-npm run rebuild
-
-# 4. Add your Anthropic API key
+# 3. Add your Anthropic API key
 cp .env.example .env
-# Edit .env and add: OPENAI_API_KEY=sk-...
+# Edit .env and add: ANTHROPIC_API_KEY=sk-ant-...
 # (You can also set it in the app via Settings)
 
-# 5. Start the app
+# 4. Start the app
 npm run dev
 ```
 
@@ -71,7 +65,6 @@ npm run dev
 | `npm run dev` | Start Vite + Electron in development mode |
 | `npm run build` | Build the renderer (Vite) |
 | `npm run package` | Build + package the app with electron-builder |
-| `npm run rebuild` | Recompile native modules for Electron |
 
 ---
 
