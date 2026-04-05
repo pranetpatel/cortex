@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "Cortex",
+    "slug": "cortex",
+    "version": "1.0.0",
+    "orientation": "default",
+    "userInterfaceStyle": "dark",
+    "icon": "./assets/icon.png",
+    "scheme": "cortex",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0e0e11"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.pranetpatel.cortex",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Used for document scanning",
+        "NSSpeechRecognitionUsageDescription": "Used for voice input in AI chat",
+        "NSMicrophoneUsageDescription": "Used for voice input in AI chat"
+      }
+    },
+    "android": {
+      "package": "com.pranetpatel.cortex",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0e0e11"
+      }
+    },
+    "plugins": [
+      "expo-font",
+      "expo-secure-store",
+      "expo-sqlite",
+      [
+        "expo-document-picker",
+        { "iCloudContainerEnvironment": "Production" }
+      ],
+      "./plugins/withPencilKit"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "cortex-mobile"
+      }
+    }
+  }
+}
