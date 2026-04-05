@@ -36,7 +36,7 @@ function persistSettings(data) {
 }
 
 function getApiKey() {
-  return process.env.ANTHROPIC_API_KEY || loadSettings().apiKey || ''
+  return process.env.OPENAI_API_KEY || loadSettings().apiKey || ''
 }
 
 // ─── WIKI LINK PARSER ────────────────────────────────────────────────────────
@@ -312,17 +312,17 @@ function setupIPC() {
     const apiKey = getApiKey()
     if (!apiKey) return null
     try {
-      const Anthropic = require('@anthropic-ai/sdk')
-      const client = new Anthropic({ apiKey })
-      const msg = await client.messages.create({
-        model: 'claude-haiku-4-5-20251001',
+      const OpenAI = require('openai')
+      const client = new OpenAI({ apiKey })
+      const res = await client.chat.completions.create({
+        model: 'gpt-4o-mini',
         max_tokens: 300,
         messages: [{
           role: 'user',
           content: `Summarize the following content in 2-3 concise sentences. Focus on the key ideas:\n\n${text.substring(0, 4000)}`,
         }],
       })
-      return msg.content[0].text
+      return res.choices[0].message.content
     } catch (e) {
       console.error('ai:summarize', e.message)
       return null
@@ -332,19 +332,25 @@ function setupIPC() {
   // ── AI: chat ───────────────────────────────────────────────────────────────
   ipcMain.handle('ai:chat', async (_, query, context) => {
     const apiKey = getApiKey()
-    if (!apiKey) return '⚠️ No API key configured. Add your Anthropic API key in Settings.'
+    if (!apiKey) return '⚠️ No API key configured. Add your OpenAI API key in Settings.'
     try {
-      const Anthropic = require('@anthropic-ai/sdk')
-      const client = new Anthropic({ apiKey })
-      const msg = await client.messages.create({
-        model: 'claude-sonnet-4-6',
+      const OpenAI = require('openai')
+      const client = new OpenAI({ apiKey })
+      const res = await client.chat.completions.create({
+        model: 'gpt-4o',
         max_tokens: 1500,
-        messages: [{
-          role: 'user',
-          content: `You are a research assistant with access to the user's knowledge base.\n\nKnowledge base:\n${context.substring(0, 8000)}\n\nUser question: ${query}\n\nAnswer based on the knowledge base. Cite specific items by title when relevant.`,
-        }],
+        messages: [
+          {
+            role: 'system',
+            content: `You are a research assistant with access to the user's knowledge base.\n\nKnowledge base:\n${context.substring(0, 8000)}`,
+          },
+          {
+            role: 'user',
+            content: `${query}\n\nAnswer based on the knowledge base. Cite specific items by title when relevant.`,
+          },
+        ],
       })
-      return msg.content[0].text
+      return res.choices[0].message.content
     } catch (e) {
       return `Error: ${e.message}`
     }
@@ -353,19 +359,25 @@ function setupIPC() {
   // ── AI: essay help ─────────────────────────────────────────────────────────
   ipcMain.handle('ai:essayHelp', async (_, prompt, notes, draft) => {
     const apiKey = getApiKey()
-    if (!apiKey) return '⚠️ No API key configured. Add your Anthropic API key in Settings.'
+    if (!apiKey) return '⚠️ No API key configured. Add your OpenAI API key in Settings.'
     try {
-      const Anthropic = require('@anthropic-ai/sdk')
-      const client = new Anthropic({ apiKey })
-      const msg = await client.messages.create({
-        model: 'claude-sonnet-4-6',
+      const OpenAI = require('openai')
+      const client = new OpenAI({ apiKey })
+      const res = await client.chat.completions.create({
+        model: 'gpt-4o',
         max_tokens: 1500,
-        messages: [{
-          role: 'user',
-          content: `You are a writing assistant helping the user develop an essay.\n\nResearch notes:\n${notes.substring(0, 4000)}\n\nCurrent draft:\n${draft.substring(0, 3000)}\n\nRequest: ${prompt}\n\nBe specific and actionable.`,
-        }],
+        messages: [
+          {
+            role: 'system',
+            content: `You are a writing assistant helping the user develop an essay.\n\nResearch notes:\n${notes.substring(0, 4000)}\n\nCurrent draft:\n${draft.substring(0, 3000)}`,
+          },
+          {
+            role: 'user',
+            content: `${prompt}\n\nBe specific and actionable.`,
+          },
+        ],
       })
-      return msg.content[0].text
+      return res.choices[0].message.content
     } catch (e) {
       return `Error: ${e.message}`
     }

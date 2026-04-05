@@ -739,14 +739,14 @@ export default function App() {
             <div style={S.modal} onClick={e => e.stopPropagation()}>
               <h3 style={S.modalTitle}>Settings</h3>
               <p style={S.modalText}>
-                Your Anthropic API key is stored locally and used only for AI features (summaries, chat, essay assistant).
+                Your OpenAI API key is stored locally and used only for AI features (summaries, chat, essay assistant).
               </p>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Icon name="key" size={14} color="rgba(255,255,255,0.3)"/>
                 <input
                   style={{ ...S.input, flex: 1 }}
                   type="password"
-                  placeholder="sk-ant-..."
+                  placeholder="sk-..."
                   value={apiKeyInput}
                   onChange={e => setApiKeyInput(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleSaveApiKey()}

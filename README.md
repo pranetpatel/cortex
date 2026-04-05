@@ -26,7 +26,7 @@ All data lives in a local SQLite database. Nothing leaves your machine except AP
 | Desktop shell | Electron 33 |
 | UI | React 18 + Vite |
 | Database | SQLite via better-sqlite3 |
-| AI | Anthropic Claude (claude-sonnet-4-6) |
+| AI | OpenAI (gpt-4o / gpt-4o-mini) |
 | Packaging | electron-builder |
 
 ---
@@ -55,7 +55,7 @@ npm run rebuild
 
 # 4. Add your Anthropic API key
 cp .env.example .env
-# Edit .env and add: ANTHROPIC_API_KEY=sk-ant-...
+# Edit .env and add: OPENAI_API_KEY=sk-...
 # (You can also set it in the app via Settings)
 
 # 5. Start the app
