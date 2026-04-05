@@ -95,9 +95,9 @@ async function initDB() {
     return
   }
 
-  // Locate the WASM binary — works in both dev and packaged builds
-  const sqlJsRoot = path.dirname(require.resolve('sql.js/package.json'))
-  const wasmPath = path.join(sqlJsRoot, 'dist', 'sql-wasm.wasm')
+  // Locate the WASM binary — resolve via the main entry (dist/sql-wasm.js)
+  const sqlJsDir = path.dirname(require.resolve('sql.js'))
+  const wasmPath = path.join(sqlJsDir, 'sql-wasm.wasm')
   const wasmBinary = fs.readFileSync(wasmPath)
 
   const SQL = await initSqlJs({ wasmBinary })
@@ -147,32 +147,6 @@ function createSchema() {
       FOREIGN KEY (source_id) REFERENCES items(id) ON DELETE CASCADE,
       FOREIGN KEY (target_id) REFERENCES items(id) ON DELETE CASCADE
     )
-  `)
-  // FTS5 full-text search (content table mirrors items)
-  db.run(`
-    CREATE VIRTUAL TABLE IF NOT EXISTS items_fts USING fts5(
-      title, content, content=items, content_rowid=rowid
-    )
-  `)
-  db.run(`
-    CREATE TRIGGER IF NOT EXISTS items_ai AFTER INSERT ON items BEGIN
-      INSERT INTO items_fts(rowid, title, content)
-      VALUES (new.rowid, new.title, new.content);
-    END
-  `)
-  db.run(`
-    CREATE TRIGGER IF NOT EXISTS items_ad AFTER DELETE ON items BEGIN
-      INSERT INTO items_fts(items_fts, rowid, title, content)
-      VALUES('delete', old.rowid, old.title, old.content);
-    END
-  `)
-  db.run(`
-    CREATE TRIGGER IF NOT EXISTS items_au AFTER UPDATE ON items BEGIN
-      INSERT INTO items_fts(items_fts, rowid, title, content)
-      VALUES('delete', old.rowid, old.title, old.content);
-      INSERT INTO items_fts(rowid, title, content)
-      VALUES (new.rowid, new.title, new.content);
-    END
   `)
   db.run(`PRAGMA foreign_keys = ON`)
   saveDB()
@@ -256,29 +230,17 @@ function setupIPC() {
     return { success: true }
   })
 
-  // ── DB: full-text search ───────────────────────────────────────────────────
+  // ── DB: full-text search (LIKE-based) ─────────────────────────────────────
   ipcMain.handle('db:search', (_, query) => {
     if (!query.trim()) return []
-    try {
-      const ftsQuery = query.replace(/[^a-zA-Z0-9\s\-_]/g, '').trim()
-      if (!ftsQuery) throw new Error('empty')
-      const rows = queryAll(
-        `SELECT items.* FROM items
-         JOIN items_fts ON items.rowid = items_fts.rowid
-         WHERE items_fts MATCH ?
-         ORDER BY rank LIMIT 50`,
-        [ftsQuery + '*']
-      )
-      return withTags(rows)
-    } catch {
-      const q = `%${query}%`
-      const rows = queryAll(
-        `SELECT * FROM items WHERE title LIKE ? OR content LIKE ?
-         ORDER BY created_at DESC LIMIT 50`,
-        [q, q]
-      )
-      return withTags(rows)
-    }
+    const q = `%${query}%`
+    const rows = queryAll(
+      `SELECT * FROM items
+       WHERE title LIKE ? OR content LIKE ?
+       ORDER BY created_at DESC LIMIT 50`,
+      [q, q]
+    )
+    return withTags(rows)
   })
 
   // ── DB: backlinks ──────────────────────────────────────────────────────────
@@ -404,6 +366,7 @@ function createWindow() {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,
+      webSecurity: false, // allow localhost + Google Fonts in dev
     },
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
     show: false,
@@ -420,7 +383,7 @@ function createWindow() {
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.show()
-    if (isDev) mainWindow.webContents.openDevTools({ mode: 'detach' })
+    if (isDev) mainWindow.webContents.openDevTools() // docked — shows renderer errors
   })
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
@@ -432,9 +395,17 @@ function createWindow() {
 // ─── APP LIFECYCLE ────────────────────────────────────────────────────────────
 app.whenReady().then(async () => {
   nativeTheme.themeSource = 'dark'
-  await initDB()
+  try {
+    await initDB()
+  } catch (e) {
+    dialog.showErrorBox('Database error', e.message)
+    app.quit()
+    return
+  }
   if (!db) return
+  console.log('[main] DB ready, setting up IPC...')
   setupIPC()
+  console.log('[main] IPC ready, creating window...')
   createWindow()
 
   app.on('activate', () => {

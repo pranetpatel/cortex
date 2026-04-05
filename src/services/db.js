@@ -1,10 +1,15 @@
-// Renderer-side wrapper around the Electron IPC database API.
-// All calls go to electron/main.js via contextBridge (window.cortex.db).
+function ipc() {
+  if (typeof window === 'undefined' || !window.cortex) {
+    console.error('window.cortex is not available — preload script may have failed to load')
+    return null
+  }
+  return window.cortex
+}
 
 export const db = {
-  getItems:     ()      => window.cortex.db.getItems(),
-  saveItem:     (item)  => window.cortex.db.saveItem(item),
-  deleteItem:   (id)    => window.cortex.db.deleteItem(id),
-  search:       (query) => window.cortex.db.search(query),
-  getBacklinks: (id)    => window.cortex.db.getBacklinks(id),
+  getItems:     ()      => ipc()?.db.getItems()     ?? Promise.resolve([]),
+  saveItem:     (item)  => ipc()?.db.saveItem(item)  ?? Promise.resolve({}),
+  deleteItem:   (id)    => ipc()?.db.deleteItem(id)  ?? Promise.resolve({}),
+  search:       (query) => ipc()?.db.search(query)   ?? Promise.resolve([]),
+  getBacklinks: (id)    => ipc()?.db.getBacklinks(id) ?? Promise.resolve([]),
 }
